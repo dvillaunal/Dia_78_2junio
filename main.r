@@ -1,30 +1,13 @@
-```{r, eval=FALSE, include=TRUE}
-"Protocolo:
- 1. Daniel Felipe Villa Rengifo
- 2. Lenguaje: R
- 3. Tema: Text mining con R: ejemplo práctico Twitter
- 4. Fuentes:
-    https://rpubs.com/Joaquin_AR/334526"
-```
+## ---- eval=FALSE, include=TRUE-------------------------------------------------------
+## "Protocolo:
+##  1. Daniel Felipe Villa Rengifo
+##  2. Lenguaje: R
+##  3. Tema: Text mining con R: ejemplo práctico Twitter
+##  4. Fuentes:
+##     https://rpubs.com/Joaquin_AR/334526"
 
-# Topic Modelling
 
-Las técincas de Modelado de Tópicos tratan de captar los temas de los que habla un corpus de texto.
-
-Una de las técnicas más difundidas en la actualidad es Latent Dirichlet Allocation Models
-
-Éste es un modelo inferencial bayesiano.
-
-No vamos a estudiar a detalle el modelo, pero a grandes rasgos propone un _proceso generativo_ donde cada palabra es el resultado de un encadenamiento de distribuciones, y luego se realiza inferencia hacia atrás para calcular la distribución más probable dada las palabras y los documentos
-
-+ El resultado del modelo es:
-
-__Una distribución de palabras por tópico:__ Podemos caracterizar cada tópico por sus palabras
-más importantes.
-
-__Una distribución de los tópicos por documento:__ Podemos caracterizar un documento por sus temas más importantes
-
-```{r}
+## ------------------------------------------------------------------------------------
 # Para Trabajar estos ejercicios descargaremos las siguientes librerias:
 #install.packages("rtweet")
 library(rtweet)
@@ -39,10 +22,9 @@ library(topicmodels)
 library(LDAvis)
 #install.packages("tsne")
 library(tsne)
-```
 
 
-```{r}
+## ------------------------------------------------------------------------------------
 # Descargas de tweets con rtweet
 
 # Vamos a filtrar por un tema especifico con tags: "q = tag OR tag OR ..."
@@ -60,9 +42,9 @@ rt <- search_tweets(q = "ParoNacional OR ColombiaNoPara OR SOSColombia OR Colomb
 
 # Guardamos los tweets en formato que R los pueda trabajar (.RDS)
 saveRDS(rt,'fuentes/rt.RDS')
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------
 # Leemos los archivos descargados:
 rt <- read_rds('fuentes/rt.RDS')
 
@@ -78,9 +60,9 @@ write.table(muestra,file = "Muestra10.txt", row.names = F)
 
 #Nos da los tweets de desde el mes pasado hasta el dia de hoy.
 range(rt$created_at)
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------
 # Grafiquemos la frecuencia de los tweets solicitados, es decir cada tanto van a la app y envian texto:
 png(filename = "FreqTweets.png")
 
@@ -95,71 +77,47 @@ freqtweets <- rt %>%
 
 freqtweets
 dev.off()
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------
 # Ahora como vemos no necesitamos todas las variables de rt, solamente el texto, ya que eso lo que utilizaremos para este Dia:
 
 # Creamos una varaible donde contenga todo el texto de los tweets
 texto <-  rt$text 
 # Veamos los 10:
 texto[1:10]
-```
 
-> Este texto es necesario limpiarlo para que sea más fácil de utilizar.
 
-# Armado del corpus con `tm`
-
-Primero creo un objeto de tipo __Corpus__. Utilizamos algo distinto a los conocidos vectores of dataframes porque es un objeto optimizado para trabajar con texto.
-
-Esto nos permite que los procesos sean mucho más eficientes, y por lo tanto trabajar con grandes corpus de manera rápida
-
-```{r}
+## ------------------------------------------------------------------------------------
 # Creamos un vector tipo corpus para trabajarlo de manera mas sencilla:
 myCorpus = Corpus(VectorSource(texto))
-```
 
-# Limpieza del Corpus
 
-Con la función `tm_map` podemos iterar sobre el corpus aplicando una transformación sobre cada documento (utilizando la libreria `purr`)
-
-para la limpieza utilizaremos las siguientes transformaciones.
-
-```{r}
+## ------------------------------------------------------------------------------------
 #################Con la función `tm_map`#############################
-```
 
 
-1. Pasar todo a minúscula (cómo la función que usamos no es de la librería `tm` tenemos que usar también `content_transformer` -> Asi transformamos despues el texto)
-
-```{r}
+## ------------------------------------------------------------------------------------
 # Convertimos todo a minuscula:
 myCorpus = tm_map(myCorpus, content_transformer(tolower))
-```
 
-2. Sacar la puntuación
 
-```{r}
+## ------------------------------------------------------------------------------------
 #Sacar la puntuación
 myCorpus = tm_map(myCorpus, removePunctuation)
-```
 
 
-3. Sacar los números
-
-```{r}
+## ------------------------------------------------------------------------------------
 #Sacar los números
 myCorpus = tm_map(myCorpus, removeNumbers)
-```
 
-4. Sacar las Palabras vacías (StopWords)
 
-```{r}
+## ------------------------------------------------------------------------------------
 # Sacar las Palabras vacías (StopWords)
 myCorpus = tm_map(myCorpus, removeWords, stopwords(kind = "es"))
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------
 # Como ya filtramos la busqueda con las palabras anteriormente utlizadas, entonces
 # También deberíamos sacar las palabras que utilizamos para descargar la información
 
@@ -168,29 +126,25 @@ delstart <- c("ParoNacional","ColombiaNoPara", "SOSColombia", "Colombia","Marche
 
 # Con la funcion removeWords eliminamos si contiene algunas de estas palabras:
 myCorpus = tm_map(myCorpus, removeWords, delstart)
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------
 # AHora inspeccionamos los resultados con la función inspect()
 inspect(myCorpus[1:10])
 
 "podemos ver que nos quedaron unos que son la forma de representar el “enter”. Lo mejor sería eliminarlos."
 
 "También queremos sacar los links. Para eso vamos a usar expresiones regulares (tema que voy a ver si tratare en los replits) para definir el patron que tiene un link, y luego crearemos una función que los elimine."
-```
 
-# Expresiones regulares
 
-Para que sea más sencilla la construcción de la expresión regular, usamos la librería `RVerbalExpressions`.
-
-```{r}
+## ------------------------------------------------------------------------------------
 # Instalamos la paqueteria necesaria:
 
 #devtools::install_github("VerbalExpressions/RVerbalExpressions")
 library(RVerbalExpressions)
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------
 # Vamos a crear una expresion que nso identifique lo que tenemos que eliminar en ese orden
 expresion <- rx() %>%
   # añadimos los "http"
@@ -222,11 +176,9 @@ myCorpus = tm_map(myCorpus, content_transformer(function(x) str_remove_all(x, pa
 
 # Inspeccionamos los resultados:
 inspect(myCorpus[1:10])
-```
 
-__Creamos una matriz de Término-documento__
 
-```{r}
+## ------------------------------------------------------------------------------------
 #Creamos una matriz de Término-documento:
 myDTM = DocumentTermMatrix(myCorpus, control = list(minWordLength = 1))
 
@@ -241,4 +193,3 @@ palabras_frecuentes <- tibble(word = names(palabras_frecuentes), freq =palabras_
 
 # Exportamos
 write.table(palabras_frecuentes, file = "RecuentoDePalabrasTweet.txt", row.names = F)
-```

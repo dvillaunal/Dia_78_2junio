@@ -1,3 +1,14 @@
+---
+title: "Dia_78_2junio"
+author: "Daniel Felipe Villa Rengifo"
+date: "6/6/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
 ```{r, eval=FALSE, include=TRUE}
 "Protocolo:
  1. Daniel Felipe Villa Rengifo
@@ -242,3 +253,9 @@ palabras_frecuentes <- tibble(word = names(palabras_frecuentes), freq =palabras_
 # Exportamos
 write.table(palabras_frecuentes, file = "RecuentoDePalabrasTweet.txt", row.names = F)
 ```
+
+```{r}
+library(knitr)
+purl("Dia_78_2junio.Rmd", "main.r")
+```
+
