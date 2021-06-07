@@ -1,2 +1,2 @@
 # Dia_78_2junio
-https://rpubs.com/Joaquin_AR/334526
+Text mining con R: ejemplo práctico Twitter
